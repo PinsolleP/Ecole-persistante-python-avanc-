@@ -9,6 +9,9 @@
 requirements.txt
 bdd
 doc
+.venv
+pyproject.toml
+uv.lock
 
 # User-specific stuff
 .idea/**/workspace.xml
