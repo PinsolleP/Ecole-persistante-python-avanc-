@@ -41,6 +41,7 @@ class AddressDao(Dao[Address]):
 
         return address
 
+
     def update(self, address: Address) -> bool:
         """Met à jour en BD l'entité Address correspondant à address, pour y correspondre
 
