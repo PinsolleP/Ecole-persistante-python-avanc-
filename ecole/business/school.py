@@ -3,15 +3,16 @@
 """
 Classe School
 """
-
 from dataclasses import dataclass, field
 from datetime import date
 
+from daos import student_dao
 from daos.course_dao import CourseDao
+from daos.teacher_dao import TeacherDao
+from daos.student_dao import Student, StudentDao
 from models.address import Address
 from models.course import Course
 from models.teacher import Teacher
-from models.student import Student
 
 
 @dataclass
@@ -37,6 +38,22 @@ class School:
     def add_student(self, student: Student) -> None:
         """Ajout de l'élève spécifié à la liste des élèves."""
         self.students.append(student)
+
+    def load_from_database(self) -> None:
+        """Charge les enseignants, cours et étudiants depuis la BDD."""
+
+        teacher_dao = TeacherDao()
+        course_dao = CourseDao()
+        student_dao = StudentDao()
+
+        self.teachers = teacher_dao.read_all()
+        self.courses = course_dao.read_all()
+        self.students = student_dao.read_all()
+        for student in self.students:
+            for course_taken in student.courses_taken:
+                for course in self.courses:
+                    if course.id == course_taken.id:
+                        course.students_taking_it.append(student)
 
     def display_courses_list(self) -> None:
         """Affichage de la liste des cours avec pour chacun d'eux :
