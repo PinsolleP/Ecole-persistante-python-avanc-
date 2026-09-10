@@ -3,7 +3,7 @@
 """
 Classe Dao[Teacher]
 """
-from models import person
+
 from models.teacher import Teacher
 from daos.dao import Dao
 from dataclasses import dataclass
@@ -54,6 +54,28 @@ class TeacherDao(Dao[Teacher]):
             teacher.id = record['id_teacher']
             return teacher
         return None
+
+    def read_all(self) -> list[Teacher]:
+        """Renvoie tous les enseignants présents en BD."""
+        teachers: list[Teacher] = []
+
+        with Dao.connection.cursor() as cursor:
+            sql = """SELECT * FROM teacher 
+                    JOIN person ON teacher.id_person = person.id_person"""
+            cursor.execute(sql)
+            records = cursor.fetchall()
+
+        for record in records:
+            teacher = Teacher(
+                record['first_name'],
+                record['last_name'],
+                record['age'],
+                record['hiring_date']
+            )
+            teacher.id = record['id_teacher']
+            teachers.append(teacher)
+        return teachers
+
 
     def update(self, teacher: Teacher) -> bool:
         """Met à jour en BD l'entité teacher correspondant à teacher, pour y correspondre
