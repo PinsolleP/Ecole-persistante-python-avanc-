@@ -104,6 +104,72 @@ class StudentDao(Dao[Student]):
                 student = None
             return student
 
+    def read_all(self) -> list[Student]:
+        """Renvoie tous les cours présents en BD."""
+        students: list[Student] = []
+
+        with Dao.connection.cursor() as cursor:
+            sql = """SELECT student.student_nbr, person.first_name, person.last_name, person.age,
+                    address.id_address, address.street, address.city, address.postal_code,
+                    course.id_course, course.name, course.start_date, course.end_date,
+                    teacher.id_teacher, teacher.hiring_date,
+                    teacher_person.first_name AS teacher_first_name,
+                    teacher_person.last_name AS teacher_last_name,
+                    teacher_person.age AS teacher_age 
+                    FROM student 
+                    JOIN person ON student.id_person = person.id_person
+                    LEFT JOIN address ON person.id_address = address.id_address
+                    LEFT JOIN takes ON student.student_nbr = takes.student_nbr
+                    LEFT JOIN course ON takes.id_course = course.id_course
+                    LEFT JOIN teacher ON course.id_teacher = teacher.id_teacher
+                    LEFT JOIN person AS teacher_person 
+                        ON teacher.id_person = teacher_person.id_person
+                    """
+            cursor.execute(sql)
+            records = cursor.fetchall()
+
+        student_by_id: dict[int, Student] = {}
+
+        for record in records:
+            student_nbr = record['student_nbr']
+            if student_nbr not in student_by_id:
+                student = Student(
+                    record['first_name'],
+                    record['last_name'],
+                    record['age'],
+                )
+                student.student_nbr = student_nbr
+
+                if record['id_address'] is not None:
+                    student.address = Address(
+                        record['street'],
+                        record['city'],
+                        record['postal_code']
+                    )
+                    student.address.id = record['id_address']
+                student_by_id[student_nbr] = student
+            student = student_by_id[student_nbr]
+
+            if record['id_course'] is not None:
+                teacher = Teacher(
+                    record['teacher_first_name'],
+                    record['teacher_last_name'],
+                    record['teacher_age'],
+                    record['hiring_date']
+                )
+                teacher.id = record['id_teacher']
+
+                course = Course(
+                    record['name'],
+                    record['start_date'],
+                    record['end_date']
+                )
+                course.id = record['id_course']
+                course.set_teacher(teacher)
+                student.courses_taken.append(course)
+        students = list(student_by_id.values())
+        return students
+
     def update(self, student: Student) -> bool:
         """Met à jour en BD l'élève correspondant à student.
 
